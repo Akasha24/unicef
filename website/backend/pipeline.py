@@ -16,7 +16,11 @@ from tensorflow.keras.models import load_model
 import logging
 
 logger = logging.getLogger(__name__)
-
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+UNICEF_DIR = os.path.join(REPO_ROOT, "unicef")
+ML_MODEL_DIR = os.path.join(UNICEF_DIR, "ml model")
+MODEL_DIR_DEFAULT = os.path.join(UNICEF_DIR, "models")
+SCALER_DIR_DEFAULT = os.path.join(UNICEF_DIR, "scalers")
 DISTRICT_COORDS: Dict[str, Dict[str, float]] = {
     "beed": {"lat": 18.9901, "lon": 75.7531},
     "Chhatrapati Sambhajinagar": {"lat": 19.8762, "lon": 75.3433},
@@ -160,7 +164,7 @@ def fetch_tmax(date_str: str, district: str) -> Optional[float]:
 
 
 def train_for_district(
-    district: str, *, model_dir: str = "models", scaler_dir: str = "scalers"
+    district: str, *, model_dir: Optional[str] = None, scaler_dir: Optional[str] = None
 ) -> None:
     """Train and persist model + scalers for a district.
 
@@ -170,8 +174,11 @@ def train_for_district(
 
     logger.info("Training model for %s", district)
     safe_name = district.lower().replace(" ", "_")
-    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-    csv_dir = os.path.join(repo_root, "ml model")
+
+    model_dir = model_dir or MODEL_DIR_DEFAULT
+    scaler_dir = scaler_dir or SCALER_DIR_DEFAULT
+
+    csv_dir = ML_MODEL_DIR
 
     candidates = [
         os.path.join(csv_dir, f"{district}_master_2015_2025.csv"),
@@ -187,7 +194,9 @@ def train_for_district(
             break
 
     if csv_path is None:
-        logger.error("No master CSV found for district %s. Checked: %s", district, candidates)
+        logger.error(
+            "No master CSV found for district %s. Checked: %s", district, candidates
+        )
         raise FileNotFoundError(
             f"No master CSV found for district {district}. Checked: {candidates}"
         )
@@ -260,8 +269,8 @@ def predict_for_district(
     district_name: str,
     date_input: str,
     *,
-    model_dir: str = "models",
-    scaler_dir: str = "scalers",
+    model_dir: Optional[str] = None,
+    scaler_dir: Optional[str] = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Load model/scalers and return predictions + RMSE table (where available).
 
@@ -273,6 +282,9 @@ def predict_for_district(
         raise ValueError(
             f"District '{district_name}' not found. Available: {list(DISTRICT_COORDS.keys())}"
         )
+
+    model_dir = model_dir or MODEL_DIR_DEFAULT
+    scaler_dir = scaler_dir or SCALER_DIR_DEFAULT
 
     safe_name = district_key.lower().replace(" ", "_")
     model_path = os.path.join(model_dir, f"{safe_name}_model.keras")
