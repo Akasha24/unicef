@@ -1,81 +1,192 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Vatsalya Plus — Heat Advisory</title>
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <header class="topbar">
-      <div class="brand">
-        <div class="logo">VP</div>
-        <div class="brand-text">
-          <div class="title">Vatsalya Plus</div>
-          <div class="subtitle">Agricultural Advisory</div>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="15-day weather temperature forecast using AI predictions">
+    <meta name="theme-color" content="#2c3e50">
+    <title>Weather Forecast | UNICEF</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <h1 class="logo">🌡️ Weather Forecast</h1>
+                <p class="tagline">15-Day Temperature Prediction for Maharashtra Districts</p>
+            </div>
         </div>
-      </div>
-      <div class="location">
-        <select id="locationSelect" aria-label="Location">
-          <option>Jalgaon</option>
-          <option>Nashik</option>
-          <option>Pune</option>
-        </select>
-      </div>
-      <div class="listen">
-        <button id="listenBtn">Listen to Today's Advisory</button>
-      </div>
     </header>
 
-    <main>
-      <section class="hero">
-        <div class="hero-inner">
-          <div class="hero-left">
-            <div class="alert-icon">✕</div>
-            <div class="hero-title">Heat Alert! Do Not Spray</div>
-            <div class="hero-sub">Jalgaon</div>
-          </div>
-          <div class="hero-cards">
-            <div class="card big">
-              <div class="label">Current Temperature</div>
-              <div class="value" id="currentTemp">--°C</div>
-            </div>
-            <div class="card big">
-              <div class="label">Real Feel</div>
-              <div class="value" id="realFeel">--°C</div>
-            </div>
-          </div>
-        </div>
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <!-- Control Panel -->
+            <section class="control-panel">
+                <div class="form-group">
+                    <label for="district">Select District *</label>
+                    <select id="district" class="select-input" required>
+                        <option value="">Loading districts...</option>
+                    </select>
+                </div>
 
-        <div class="status-row">
-          <div class="heat-status">
-            <div class="legend">
-              <div class="dot green"></div>
-              <div class="legend-label">Normal</div>
-              <div class="dot orange"></div>
-              <div class="legend-label">Caution</div>
-              <div class="dot red"></div>
-              <div class="legend-label">Alert</div>
-            </div>
-            <div class="current-status">
-              <div class="current-dot" id="statusIndicator"></div>
-              <div class="current-text">Current Status</div>
-            </div>
-          </div>
-        </div>
-      </section>
+                <div class="form-group">
+                    <label for="date">Select Date *</label>
+                    <input 
+                        type="date" 
+                        id="date" 
+                        class="date-input"
+                        required
+                    >
+                </div>
 
-      <section class="forecast-section">
-        <h2>15-Day Temperature Forecast</h2>
-        <div class="advice" id="advice"></div>
-        <div class="forecast-wrap">
-          <div class="forecast" id="forecast"></div>
+                <button id="predictBtn" class="btn btn-primary" onclick="handlePredict()">
+                    <span class="btn-text">Get Forecast</span>
+                    <span class="btn-loader hidden"></span>
+                </button>
+            </section>
+
+            <!-- Error Alert -->
+            <div id="errorAlert" class="alert alert-error hidden">
+                <span class="alert-content"></span>
+                <button class="alert-close" onclick="closeAlert('errorAlert')">&times;</button>
+            </div>
+
+            <!-- Success Alert -->
+            <div id="successAlert" class="alert alert-success hidden">
+                <span class="alert-content"></span>
+                <button class="alert-close" onclick="closeAlert('successAlert')">&times;</button>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="loading-state hidden">
+                <div class="spinner"></div>
+                <p>Fetching forecast data...</p>
+            </div>
+
+            <!-- Results Section -->
+            <section id="resultsSection" class="results-section hidden">
+                <!-- Summary Card -->
+                <div class="summary-card">
+                    <h2 class="summary-title">
+                        <span id="summaryDistrict"></span>
+                        <span class="summary-date" id="summaryDate"></span>
+                    </h2>
+                    <div class="summary-stats">
+                        <div class="stat">
+                            <div class="stat-label">Average</div>
+                            <div class="stat-value" id="avgTemp">--</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">High</div>
+                            <div class="stat-value" id="maxTemp">--</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Low</div>
+                            <div class="stat-value" id="minTemp">--</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Forecast Grid -->
+                <div class="forecast-grid" id="forecastGrid">
+                    <!-- Cards will be populated here -->
+                </div>
+
+                <!-- Export Options -->
+                <div class="export-options">
+                    <button class="btn btn-secondary" onclick="downloadCSV()">
+                        📥 Download CSV
+                    </button>
+                    <button class="btn btn-secondary" onclick="toggleChart()">
+                        📊 View Chart
+                    </button>
+                </div>
+
+                <!-- Chart Container -->
+                <div id="chartContainer" class="chart-container hidden">
+                    <canvas id="forecastChart"></canvas>
+                </div>
+            </section>
+
+            <!-- Info Section -->
+            <section class="info-section">
+                <h2>About This Forecast</h2>
+                <div class="info-grid">
+                    <div class="info-card">
+                        <h3>🤖 AI-Powered</h3>
+                        <p>Predictions generated using custom trained Conv1D-LSTM neural networks</p>
+                    </div>
+                    <div class="info-card">
+                        <h3>📊 Data-Driven</h3>
+                        <p>Based on 10+ years of meteorological data and ERA5 climate reanalysis</p>
+                    </div>
+                    <div class="info-card">
+                        <h3>🎯 Accurate</h3>
+                        <p>Real-time data integration with Open-Meteo API for current conditions</p>
+                    </div>
+                    <div class="info-card">
+                        <h3>📱 Responsive</h3>
+                        <p>Works on desktop, tablet, and mobile devices</p>
+                    </div>
+                </div>
+            </section>
         </div>
-      </section>
     </main>
 
-    <footer class="footer">&copy; Vatsalya Plus</footer>
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 UNICEF Weather Forecast System. All rights reserved.</p>
+            <p>
+                <a href="javascript:void(0)" onclick="showApiStatus()">API Status</a> • 
+                <a href="javascript:void(0)" onclick="showAbout()">About</a>
+            </p>
+        </div>
+    </footer>
 
+    <!-- Modal: API Status -->
+    <div id="apiStatusModal" class="modal hidden">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('apiStatusModal')">&times;</button>
+            <h2>API Status</h2>
+            <div id="apiStatusContent">
+                <p>Checking API health...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: About -->
+    <div id="aboutModal" class="modal hidden">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('aboutModal')">&times;</button>
+            <h2>About This Application</h2>
+            <div id="aboutContent">
+                <p><strong>Weather Forecast System</strong> provides accurate 15-day temperature predictions for Maharashtra districts using artificial intelligence.</p>
+                <h3>Features:</h3>
+                <ul>
+                    <li>15-day temperature forecasts</li>
+                    <li>District-specific predictions</li>
+                    <li>Real-time data integration</li>
+                    <li>CSV export capability</li>
+                    <li>Interactive visualizations</li>
+                </ul>
+                <h3>Technology Stack:</h3>
+                <ul>
+                    <li>Backend: Flask + TensorFlow</li>
+                    <li>Frontend: Vanilla JavaScript</li>
+                    <li>Data: Open-Meteo API + ERA5</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Overlay -->
+    <div class="modal-overlay hidden" onclick="closeAllModals()"></div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script src="script.js"></script>
-  </body>
+</body>
 </html>

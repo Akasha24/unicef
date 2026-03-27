@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Diagnostic - Weather Forecast</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #e0e0e0;
+        }
+        
+        h1 {
+            color: #4ec9b0;
+            border-bottom: 2px solid #4ec9b0;
+            padding-bottom: 10px;
+        }
+        
+        .section {
+            background: #252526;
+            border-left: 4px solid #007acc;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .check {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 3px;
+        }
+        
+        .check.pass {
+            background: #1e3a1e;
+            border-left: 3px solid #4ec9b0;
+        }
+        
+        .check.fail {
+            background: #3a1e1e;
+            border-left: 3px solid #f44747;
+        }
+        
+        .check.loading {
+            background: #3a3a1e;
+            border-left: 3px solid #dcdcaa;
+        }
+        
+        .icon {
+            font-size: 1.2em;
+            margin-right: 10px;
+            min-width: 30px;
+        }
+        
+        .details {
+            margin-left: 30px;
+            font-size: 0.9em;
+            color: #a0a0a0;
+            margin-top: 5px;
+        }
+        
+        .status-bar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+        
+        .status-item {
+            background: #333;
+            padding: 8px 15px;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+        
+        .status-item.ok {
+            background: #1e3a1e;
+            color: #4ec9b0;
+        }
+        
+        .status-item.err {
+            background: #3a1e1e;
+            color: #f44747;
+        }
+        
+        button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px 5px 5px 0;
+            font-family: 'Courier New', monospace;
+        }
+        
+        button:hover {
+            background: #0098ff;
+        }
+        
+        pre {
+            background: #1e1e1e;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+            font-size: 0.85em;
+        }
+        
+        .code {
+            background: #1e1e1e;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #d7ba7d;
+        }
+        
+        .command {
+            background: #2d2d30;
+            padding: 10px;
+            border-radius: 3px;
+            margin: 10px 0;
+            border-left: 3px solid #4ec9b0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Weather Forecast - System Diagnostic</h1>
+    
+    <!-- Summary -->
+    <div class="section">
+        <h2>System Status Summary</h2>
+        <div class="status-bar">
+            <div class="status-item" id="statusFrontend">Frontend: Testing...</div>
+            <div class="status-item" id="statusBackend">Backend: Testing...</div>
+            <div class="status-item" id="statusAPI">API: Testing...</div>
+            <div class="status-item" id="statusModels">Models: Testing...</div>
+        </div>
+    </div>
+    
+    <!-- Frontend -->
+    <div class="section">
+        <h2>Frontend Checks</h2>
+        <div id="frontendChecks"></div>
+    </div>
+    
+    <!-- Backend -->
+    <div class="section">
+        <h2>Backend Connectivity</h2>
+        <div id="backendChecks"></div>
+    </div>
+    
+    <!-- API Endpoints -->
+    <div class="section">
+        <h2>API Endpoints</h2>
+        <div id="apiChecks"></div>
+    </div>
+    
+    <!-- Models -->
+    <div class="section">
+        <h2>Trained Models</h2>
+        <div id="modelChecks"></div>
+    </div>
+    
+    <!-- Actions -->
+    <div class="section">
+        <h2>Quick Actions</h2>
+        <button onclick="runAllDiagnostics()">🔄 Re-run All Diagnostics</button>
+        <button onclick="testPrediction()">🧪 Test Single Prediction</button>
+        <button onclick="copyStartupCommands()">📋 Copy Setup Commands</button>
+        <button onclick="goToApp()">🚀 Open Main App</button>
+    </div>
+    
+    <!-- Detailed Output -->
+    <div class="section">
+        <h2>Detailed Output</h2>
+        <pre id="detailedOutput">Waiting for diagnostics...</pre>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000';
+        let diagnosticLog = [];
+        
+        function log(msg) {
+            const time = new Date().toLocaleTimeString();
+            diagnosticLog.push(`[${time}] ${msg}`);
+            document.getElementById('detailedOutput').textContent = diagnosticLog.join('\n');
+        }
+        
+        function addCheck(sectionId, icon, title, status, details = '') {
+            const section = document.getElementById(sectionId);
+            const checkDiv = document.createElement('div');
+            checkDiv.className = `check ${status}`;
+            checkDiv.innerHTML = `
+                <span class="icon">${icon}</span>
+                <div>
+                    <div>${title}</div>
+                    ${details ? `<div class="details">${details}</div>` : ''}
+                </div>
+            `;
+            section.appendChild(checkDiv);
+        }
+        
+        function setStatus(itemId, status, text) {
+            const item = document.getElementById(itemId);
+            if (item) {
+                item.textContent = text;
+                item.className = 'status-item ' + (status === 'pass' ? 'ok' : 'err');
+            }
+        }
+        
+        async function runAllDiagnostics() {
+            diagnosticLog = [];
+            document.querySelectorAll('[id$="Checks"]').forEach(el => el.innerHTML = '');
+            
+            log('Starting system diagnostics...');
+            
+            // Frontend checks
+            log('\n=== Frontend Checks ===');
+            checkFrontend();
+            
+            // Backend checks
+            log('\n=== Backend Checks ===');
+            await checkBackend();
+            
+            // API checks
+            log('\n=== API Endpoint Checks ===');
+            await checkAPIEndpoints();
+            
+            // Model checks
+            log('\n=== Model Checks ===');
+            await checkModels();
+            
+            log('\nDiagnostics complete!');
+        }
+        
+        function checkFrontend() {
+            try {
+                addCheck('frontendChecks', '✓', 'Page loaded successfully', 'pass');
+                log('Frontend page loaded successfully');
+                
+                const deps = {
+                    'script.js loaded': typeof handlePredict !== 'undefined',
+                    'Chart.js available': typeof Chart !== 'undefined',
+                    'API_BASE_URL configured': typeof API_BASE_URL === 'string',
+                };
+                
+                Object.entries(deps).forEach(([name, has]) => {
+                    if (has) {
+                        addCheck('frontendChecks', '✓', name, 'pass');
+                        log(`✓ ${name}`);
+                    } else {
+                        addCheck('frontendChecks', '✗', name, 'fail');
+                        log(`✗ ${name} - NOT FOUND`);
+                    }
+                });
+                
+                addCheck('frontendChecks', 'ℹ', 'API Base URL', 'pass', `<span class="code">${API_BASE_URL}</span>`);
+                log(`API Base URL: ${API_BASE_URL}`);
+                
+                setStatus('statusFrontend', 'pass', 'Frontend: ✓ OK');
+            } catch (err) {
+                addCheck('frontendChecks', '✗', 'Frontend check failed', 'fail', err.message);
+                log(`✗ Frontend error: ${err.message}`);
+                setStatus('statusFrontend', 'fail', 'Frontend: ✗ Error');
+            }
+        }
+        
+        async function checkBackend() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addCheck('backendChecks', '✓', 'Backend server is running', 'pass', `Service: ${data.service}`);
+                    log(`✓ Backend is running: ${data.service}`);
+                    setStatus('statusBackend', 'pass', 'Backend: ✓ Running');
+                    return true;
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (err) {
+                addCheck('backendChecks', '✗', 'Backend connection failed', 'fail', err.message);
+                log(`✗ Backend error: ${err.message}`);
+                log(`To fix: Run "python app.py" in the backend folder`);
+                addCheck('backendChecks', 'ℹ', 'Start backend with', 'pass', `<div class="command">python app.py</div>`);
+                setStatus('statusBackend', 'fail', 'Backend: ✗ Offline');
+                return false;
+            }
+        }
+        
+        async function checkAPIEndpoints() {
+            const endpoints = [
+                { method: 'GET', path: '/health', desc: 'Health Check' },
+                { method: 'GET', path: '/api/districts', desc: 'Get Districts' },
+                { method: 'GET', path: '/api/model-info/beed', desc: 'Model Info (beed)' },
+            ];
+            
+            for (const ep of endpoints) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}${ep.path}`, { mode: 'cors' });
+                    if (response.ok) {
+                        const data = await response.json();
+                        const details = ep.path.includes('districts') 
+                            ? `Districts: ${data.count}` 
+                            : 'Success';
+                        addCheck('apiChecks', '✓', `${ep.desc} (${ep.method})`, 'pass', details);
+                        log(`✓ ${ep.path}: OK`);
+                    } else {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                } catch (err) {
+                    addCheck('apiChecks', '✗', `${ep.desc} (${ep.method})`, 'fail', err.message);
+                    log(`✗ ${ep.path}: ${err.message}`);
+                }
+            }
+            
+            setStatus('statusAPI', 'pass', 'API: ✓ OK');
+        }
+        
+        async function checkModels() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/model-info/beed`, { mode: 'cors' });
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    const info = data.data;
+                    addCheck('modelChecks', info.model_exists ? '✓' : '✗', 'beed_model.keras', info.model_exists ? 'pass' : 'fail', `${info.model_size_mb.toFixed(1)} MB`);
+                    addCheck('modelChecks', info.scalers_exist ? '✓' : '✗', 'beed_scalers.pkl', info.scalers_exist ? 'pass' : 'fail');
+                    log(`✓ Model: beed_model.keras (${info.model_size_mb.toFixed(1)} MB)`);
+                    log(`✓ Scalers: beed_scalers.pkl`);
+                    setStatus('statusModels', 'pass', 'Models: ✓ OK');
+                }
+            } catch (err) {
+                addCheck('modelChecks', '✗', 'Model check failed', 'fail', err.message);
+                log(`✗ Model error: ${err.message}`);
+                setStatus('statusModels', 'fail', 'Models: ✗ Error');
+            }
+        }
+        
+        async function testPrediction() {
+            log('\n=== Testing Single Prediction ===');
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                log(`Testing with: district=beed, date=${today}`);
+                
+                const response = await fetch(`${API_BASE_URL}/api/predict`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    mode: 'cors',
+                    body: JSON.stringify({ district: 'beed', date: today })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✓ Prediction successful!`);
+                    log(`  District: ${data.district}`);
+                    log(`  Predictions: ${data.predictions.length} days`);
+                    log(`  First day: ${data.predictions[0].date} → ${data.predictions[0].tmax}°C`);
+                    alert('✓ Prediction test successful!\n\nCheck console for details.');
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.message);
+                }
+            } catch (err) {
+                log(`✗ Prediction test failed: ${err.message}`);
+                alert(`✗ Prediction test failed:\n\n${err.message}`);
+            }
+        }
+        
+        function copyStartupCommands() {
+            const commands = `# Start Backend (Terminal 1)
+cd c:\\Users\\ACER\\projects\\unicef\\backend
+python app.py
+
+# Start Frontend (Terminal 2)
+cd c:\\Users\\ACER\\projects\\unicef\\website
+python -m http.server 8000
+
+# Open Browser
+http://localhost:8000`;
+            
+            navigator.clipboard.writeText(commands).then(() => {
+                alert('✓ Startup commands copied to clipboard!');
+            });
+        }
+        
+        function goToApp() {
+            window.location.href = 'http://localhost:8000';
+        }
+        
+        // Run diagnostics on page load
+        window.addEventListener('load', () => {
+            setTimeout(runAllDiagnostics, 500);
+        });
+    </script>
+</body>
+</html>
