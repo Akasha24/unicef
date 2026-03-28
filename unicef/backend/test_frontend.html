@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Test Forecast Frontend</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Arial;margin:24px}
+    label{display:block;margin-top:8px}
+    input,button{padding:8px;margin-top:4px}
+    table{border-collapse:collapse;margin-top:12px}
+    td,th{border:1px solid #ddd;padding:6px}
+  </style>
+</head>
+<body>
+  <h3>Forecast test UI</h3>
+  <label>District
+    <select id="district"><option>loading...</option></select>
+  </label>
+  <label>Date (YYYY-MM-DD)
+    <input id="date" value="2026-03-26" />
+  </label>
+  <div>
+    <button id="run">Run Prediction</button>
+  </div>
+  <pre id="log" style="white-space:pre-wrap;margin-top:12px;background:#f7f7f7;padding:10px;border:1px solid #eee"></pre>
+  <div id="table"></div>
+
+<script>
+const log = msg => { document.getElementById('log').textContent = msg }
+const renderResults = (dates, preds) => {
+  if(!dates || !preds) return;
+  let html = '<table><thead><tr><th>Day</th><th>Date</th><th>Predicted Tmax (°C)</th></tr></thead><tbody>';
+  for(let i=0;i<dates.length;i++){
+    html += `<tr><td>Day ${String(i+1).padStart(2,'0')}</td><td>${dates[i]}</td><td>${preds[i]}</td></tr>`
+  }
+  html += '</tbody></table>'
+  document.getElementById('table').innerHTML = html
+}
+
+document.getElementById('run').addEventListener('click', async () => {
+  const district = document.getElementById('district').value.trim()
+  const date = document.getElementById('date').value.trim()
+  if(!district || !date){ log('Enter district and date'); return }
+
+  log('Requesting...')
+  document.getElementById('table').innerHTML = ''
+  try{
+    const url = `http://127.0.0.1:5000/predict?district=${encodeURIComponent(district)}&date=${encodeURIComponent(date)}`
+    const res = await fetch(url)
+    const data = await res.json()
+    if(!res.ok){
+      log('Error: ' + JSON.stringify(data, null, 2))
+      return
+    }
+    log('Success: \n' + JSON.stringify(data, null, 2))
+    renderResults(data.dates, data.predicted_tmax)
+  }catch(err){
+    log('Fetch failed: ' + err)
+  }
+})
+
+// Populate district dropdown from backend /health
+async function loadDistricts(){
+  const sel = document.getElementById('district')
+  try{
+    const res = await fetch('http://127.0.0.1:5000/health')
+    if(!res.ok){
+      log('Failed to fetch /health: ' + res.status)
+      sel.innerHTML = '<option>error</option>'
+      return
+    }
+    const data = await res.json()
+    const districts = data.available_districts || []
+    if(districts.length === 0){
+      sel.innerHTML = '<option>none</option>'
+      log('No districts available from backend')
+      return
+    }
+    sel.innerHTML = ''
+    districts.forEach(d => {
+      const opt = document.createElement('option')
+      opt.value = d
+      opt.textContent = d
+      sel.appendChild(opt)
+    })
+    log('Loaded districts from backend')
+  }catch(err){
+    sel.innerHTML = '<option>offline</option>'
+    log('Backend /health fetch failed: ' + err)
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadDistricts)
+</script>
+</body>
+</html>
