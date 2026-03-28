@@ -5,7 +5,7 @@
 3. Open the terminal in VS Code
 4. Run the following command:
 
-   git clone https://github.com/Akasha24/projects.git
+   git clone https://github.com/Akasha24/unicef.git
 
 5. The scripts are in the `dev` branch
 6. Run the following files (individual process)
