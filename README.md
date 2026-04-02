@@ -4,28 +4,46 @@ UNICEF machine learning system to predict maximum temperatures for 15 days ahead
 
 ## 🚀 Quick Start
 
-### 1. Setup
+### 1. Clone the Repository
 
 ```bash
-# Create and activate Python environment
+git clone https://github.com/Akasha24/unicef.git
+cd unicef
+```
+
+### 2. Setup Python Environment
+
+```bash
+# Create virtual environment
 python -m venv .venv
+
+# Activate it
 .venv\Scripts\Activate.ps1        # Windows PowerShell
 # or
 .venv\Scripts\activate.bat         # Windows CMD
 # or
 source .venv/bin/activate          # macOS/Linux
+```
 
-# Install dependencies
+### 3. Install Dependencies
+
+```bash
 pip install -r website/backend/requirements.txt
 ```
 
-### 2. Run the App
+### 4. Run the Application
 
 ```bash
 python run.py
 ```
 
-Open browser: **http://localhost:5000**
+### 5. Open in Browser
+
+```
+http://localhost:5000
+```
+
+That's it! 🎉 The app is ready to use.
 
 ---
 
